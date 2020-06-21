@@ -12,8 +12,11 @@
 
 (setv coco-storage {})
 
-(defmacro coco-store [cfg code]
-  (assoc coco-storage (name cfg) code))
+(defmacro coco-store [cfg code &optional kind]
+  (when (not (in (name cfg) coco-storage)) (assoc coco-storage (name cfg) {}))
+  (assoc (get coco-storage (name cfg)) (or kind :bindings) code))
+; (defmacro coco-store [cfg code]
+;   (assoc coco-storage (name cfg) code))
 
 (defmacro/g! coco-run [configs &rest body]
   "code is config (is code)."
@@ -46,6 +49,6 @@
 (defmacro coco [configs &rest body]
   `(coco-run
      [~@(lfor cfg configs (if (symbol? cfg)
-                              (get coco-storage (name cfg))
+                              (get (get coco-storage (name cfg)) :bindings)
                               cfg))]
-     ~@(lfor bdy body (if (symbol? bdy) (get coco-storage (name bdy)) bdy))))
+     ~@(lfor bdy body (if (symbol? bdy) (get (get coco-storage (name bdy)) :body) bdy))))
