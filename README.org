@@ -1,0 +1,135 @@
+#+TITLE: coco: code is config (is code)
+
+~coco~ is a library built on [[https://github.com/hylang/hy][hy]], a lisp dialect of python, designed to
+end the distinction between the code you write and the configurations
+used to run it.
+
+
+* Motivation
+  This library was developed with machine learning / data science in
+  mind, where models are run with various re-parameterizations stored
+  in some cfg (or json, or pickle, etc) file. But ideally should be
+  useful in any situation where various operations have
+  parameterizations that should be stored on disk. ~coco~ aims to
+  solve a number of problems I have encountered with this
+  process. Namely:
+  - removing the "middle man" of converting configuration to the
+    run-time state and objects needed to get things done. E.g. it's
+    reasonable to store the learning rate of some model as ~0.1~ with
+    most text based solutions, but what about more complicated relationships?
+  - Conversely, I still want human readable config files. I don't want
+    to be doing any sort of archaeology on an opaque pickle file that
+    someone sent me (or that I made myself 6+ months ago).
+  - overlaying sub-sets on configurations simply, while maintaining
+    logical flow. E.g. if ~a = 0~ and ~b = a + 1~, when I change ~a~
+    to 1, ~b~ should now reflect that change (~b = 2~) without
+    re-defining that relationship. This is inspired/lifted from the
+    library [[https://sacred.readthedocs.io/en/stable/configuration.html#combining-configurations][sacred]].
+
+
+  So, how does ~coco~ accomplish these goals? Through the power of
+  macros!
+
+* Examples
+
+  
+** Your first coco
+   Define a set of configurations, as in this example ~cfg.hy~:
+   #+begin_src
+     (require [coco.coco [coco-store]])
+
+     ;; store the bindings needed for this simple example
+     (coco-store simple [a 1
+                         b (+ a 1)])
+   #+end_src
+
+   Now when we run this subsequent ~run.hy~, we can benefit from the
+   defined bindings above:
+   #+begin_src
+     (require [coco.coco [coco]])
+     (require cfg) ;; necessary to build the config defined here
+    
+     (coco simple :body (print a b))
+   #+end_src
+
+   We get the expected result:
+   #+RESULTS:
+   : 1 2
+
+   ~coco~ also supports defining operations to take place after
+   binding all values, e.g. the ~body~:
+   #+begin_src
+    (require [coco.coco [coco-store]])
+    
+    ;; store the bindings needed for this simple example
+    (coco-store simple [a 1
+                        b (+ a 1)])
+    
+    ;; add a body to this config
+    (coco-store simple (print "simple body") :body)
+   #+end_src
+
+   Now running ~coco~ on ~simple~ will bind the variables and then run
+   it's body:
+   #+begin_src
+     (require [coco.coco [coco]])
+     (require cfg) ;; necessary to build the config defined here
+    
+     (coco simple :body (print a b))
+   #+end_src
+   We get the expected result:
+   #+RESULTS:
+   : simple body
+   : 1 2
+
+   ~coco~ also supports overriding bindings by separate configurations:
+   #+begin_src
+    (require [coco.coco [coco-store]])
+    
+    ;; store the bindings needed for this simple example
+    (coco-store simple [a 1
+                        b (+ a 1)])
+    
+    ;; add a body to this config
+    (coco-store simple (print "simple body") :body)
+    
+    ;; make a bigger!
+    (coco-store override [a 10])
+   #+end_src
+
+   We can now combine these configs in ~run.hy~:
+   #+begin_src
+    (require [coco.coco [coco]])
+    (require cfg)
+    
+    (coco simple override :body (print a b))
+   #+end_src
+   #+RESULTS:
+   : simple body
+   : 10 11
+
+   Finally, ~coco~ allows for a separate ~:init~ binding to run code
+   before bindings are created. This is typically used to import
+   dependencies need to create the bindings:
+   #+begin_src
+    (require [coco.coco [coco-store coco]])
+    
+    (coco-store depend [radius 0.7
+                        area (* pi (** radius 2))])
+    
+    ;; make sure we have pi!
+    (coco-store depend (import [math [pi]]) :init)
+    
+    (coco depend :body (print "our circle has area: " area))
+   #+end_src
+   #+RESULTS:
+   : our circle has area:  1.5393804002589984
+
+
+* Why not <insert alternative here>?
+  There are many existing approaches to solving the problems addressed with
+  this library. I took inspiration from many of them. I don't claim
+  this to be the best, and certainly not the only, solution to this
+  need. But, it's something that I wanted to implement for a long time
+  after getting some exposure to the power of lisp languages to
+  directly extend the language through macros.
