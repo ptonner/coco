@@ -52,9 +52,10 @@ used to run it.
      (coco simple :body (print a b))
    #+end_src
 
-   We get the expected result:
-   #+RESULTS:
-   : 1 2
+   Produces the expected result:
+   #+begin_src
+    1 2
+   #+end_src
 
    ~coco~ also supports defining operations to take place after
    binding all values, e.g. the ~body~:
@@ -78,9 +79,10 @@ used to run it.
      (coco simple :body (print a b))
    #+end_src
    We get the expected result:
-   #+RESULTS:
-   : simple body
-   : 1 2
+   #+begin_src
+    simple body
+    1 2
+   #+end_src
 
    ~coco~ also supports overriding bindings by separate configurations:
    #+begin_src
@@ -104,9 +106,11 @@ used to run it.
     
     (coco simple override :body (print a b))
    #+end_src
-   #+RESULTS:
-   : simple body
-   : 10 11
+   
+   #+begin_src
+    simple body
+    10 11
+   #+end_src
 
    Finally, ~coco~ allows for a separate ~:init~ binding to run code
    before bindings are created. This is typically used to import
@@ -122,8 +126,9 @@ used to run it.
     
     (coco depend :body (print "our circle has area: " area))
    #+end_src
-   #+RESULTS:
-   : our circle has area:  1.5393804002589984
+   #+begin_src
+    our circle has area:  1.5393804002589984
+   #+end_src
 
 
 * Why not <insert alternative here>?
