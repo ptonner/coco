@@ -2,8 +2,12 @@
 ; This file is part of coco, which is free software licensed under the
 ; Expat license. See the LICENSE.
 
+(import [funcparserlib.parser [many maybe]]
+      [hy.model-patterns [*]]
+      [collections [OrderedDict]])
 
 (eval-and-compile
+
   (import os pickle)
   (when (not ((. os path exists) ".coco")) (.mkdir os ".coco"))
   (setv coco-cache-loc ((. os path join) ".coco" "coco-cache.pkl")
@@ -46,9 +50,28 @@
               (print (print_exc))
               (run_repl (HyREPL :locals ~g!locals))))))
 
-(defmacro coco [configs &rest body]
+(defmacro/g! coco [&rest args]
+
+  ;; parse arguments
+  (setv g!parser
+        (whole [(many SYM)
+                (maybe (many (+ FORM FORM)))]))
+  (setv g!parsed (.parse g!parser args))
+
+  ;; split into symbols and forms
+  (setv g!symbols (get g!parsed 0))
+  (setv g!forms {})
+  (for [[k v] (get g!parsed 1)]
+    (assoc g!forms k v))
+
+  ;; push to run
   `(coco-run
-     [~@(lfor cfg configs (if (symbol? cfg)
-                              (get (get coco-storage (name cfg)) :bindings)
-                              cfg))]
-     ~@(lfor bdy body (if (symbol? bdy) (get (get coco-storage (name bdy)) :body) bdy))))
+     [~@(+ (lfor cfg g!symbols :if (:bindings (get coco-storage (name cfg)) :default None)
+                 (:bindings (get coco-storage (name cfg)) :default None))
+           (if (in :bind g!forms) [(get g!forms :bind)] []))]
+      ~@(+ (lfor bdy g!symbols :if (:init (get coco-storage (name bdy)) :default None)
+                 (:init (get coco-storage (name bdy)) :default None))
+           (if (in :init g!forms) [(get g!forms :init)] [])
+           (lfor bdy g!symbols :if (:body (get coco-storage (name bdy)) :default None)
+                (:body (get coco-storage (name bdy)) :default None))
+           (if (in :body g!forms) [(get g!forms :body)] []))))
