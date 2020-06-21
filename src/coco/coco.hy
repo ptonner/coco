@@ -22,7 +22,7 @@
 ; (defmacro coco-store [cfg code]
 ;   (assoc coco-storage (name cfg) code))
 
-(defmacro/g! coco-run [configs &rest body]
+(defmacro/g! coco-run [init configs &rest body]
   "code is config (is code)."
   (import [collections [OrderedDict]])
 
@@ -43,6 +43,7 @@
      (import [coco.coco [coco-cache]])
      (import [traceback [print_exc]])
      (import [hy.cmdline [HyREPL run_repl]])
+     ~@init
      (setv ~@g!bindings)
      ; (assoc coco-cache ~g!bindings ~g!locals)
      (try ~@body
@@ -66,12 +67,12 @@
 
   ;; push to run
   `(coco-run
+     [~@(+ (lfor bdy g!symbols :if (:init (get coco-storage (name bdy)) :default None)
+                 (:init (get coco-storage (name bdy)) :default None))
+           (if (in :init g!forms) [(get g!forms :init)] []))]
      [~@(+ (lfor cfg g!symbols :if (:bindings (get coco-storage (name cfg)) :default None)
                  (:bindings (get coco-storage (name cfg)) :default None))
            (if (in :bind g!forms) [(get g!forms :bind)] []))]
-      ~@(+ (lfor bdy g!symbols :if (:init (get coco-storage (name bdy)) :default None)
-                 (:init (get coco-storage (name bdy)) :default None))
-           (if (in :init g!forms) [(get g!forms :init)] [])
-           (lfor bdy g!symbols :if (:body (get coco-storage (name bdy)) :default None)
+      ~@(+ (lfor bdy g!symbols :if (:body (get coco-storage (name bdy)) :default None)
                 (:body (get coco-storage (name bdy)) :default None))
            (if (in :body g!forms) [(get g!forms :body)] []))))
