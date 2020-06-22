@@ -95,7 +95,7 @@ used to run it.
     ;; add a body to this config
     (coco-store simple (print "simple body") :body)
     
-    ;; make a bigger!
+    ;; make "a" bigger!
     (coco-store override [a 10])
    #+end_src
 
