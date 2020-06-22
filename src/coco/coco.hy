@@ -16,11 +16,12 @@
 
 (setv coco-storage {})
 
+(defmacro coco-reset []
+  (setv coco-storage {}))
+
 (defmacro coco-store [cfg code &optional kind]
   (when (not (in (name cfg) coco-storage)) (assoc coco-storage (name cfg) {}))
   (assoc (get coco-storage (name cfg)) (or kind :bindings) code))
-; (defmacro coco-store [cfg code]
-;   (assoc coco-storage (name cfg) code))
 
 (defmacro/g! coco-run [init configs &rest body]
   "code is config (is code)."
