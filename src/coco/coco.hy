@@ -57,7 +57,8 @@
   ;; parse arguments
   (setv g!parser
         (whole [(many SYM)
-                (maybe (many (+ FORM FORM)))]))
+                (sym ":body")
+                (many FORM)]))
   (setv g!parsed (.parse g!parser args))
 
   ;; split into symbols and forms
