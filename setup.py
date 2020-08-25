@@ -28,7 +28,7 @@ setup(
     url="https://github.com/ptonner/coco",
     packages=find_packages("src"),
     package_dir={"": "src"},
-    package_data={"coco.coco": ["*.hy"]},
+    package_data={"coco": ["*.hy"]},
     py_modules=[splitext(basename(path))[0] for path in glob("src/*.py")],
     include_package_data=True,
     zip_safe=False,
