@@ -52,29 +52,36 @@
               (print (print_exc))
               (run_repl (HyREPL :locals ~g!locals))))))
 
-(defmacro/g! coco [&rest args]
+(defmacro/g! coco [cfgs &rest body]
 
   ;; parse arguments
-  (setv g!parser
-        (whole [(many SYM)
-                (sym ":body")
-                (many FORM)]))
-  (setv g!parsed (.parse g!parser args))
+  ;; (setv g!parser
+  ;;       (whole [(many SYM)
+  ;;               (sym ":body")
+  ;;               (many FORM)]))
+  ;; (setv g!parsed (.parse g!parser args))
 
-  ;; split into symbols and forms
-  (setv g!symbols (get g!parsed 0))
-  (setv g!forms {})
-  (for [[k v] (get g!parsed 1)]
-    (assoc g!forms k v))
+  ;; ;; split into symbols and forms
+  ;; (setv g!symbols (get g!parsed 0))
+  ;; (setv g!forms {})
+  ;; (for [[k v] (get g!parsed 1)]
+  ;;   (assoc g!forms k v))
 
   ;; push to run
   `(coco-run
-     [~@(+ (lfor bdy g!symbols :if (:init (get coco-storage (name bdy)) :default None)
-                 (:init (get coco-storage (name bdy)) :default None))
-           (if (in :init g!forms) [(get g!forms :init)] []))]
-     [~@(+ (lfor cfg g!symbols :if (:bindings (get coco-storage (name cfg)) :default None)
-                 (:bindings (get coco-storage (name cfg)) :default None))
-           (if (in :bind g!forms) [(get g!forms :bind)] []))]
-      ~@(+ (lfor bdy g!symbols :if (:body (get coco-storage (name bdy)) :default None)
+     [~@(lfor bdy cfgs :if (:init (get coco-storage (name bdy)) :default None)
+                 (:init (get coco-storage (name bdy)) :default None))]
+     [~@(lfor cfg cfgs :if (:bindings (get coco-storage (name cfg)) :default None)
+                 (:bindings (get coco-storage (name cfg)) :default None))]
+      ~@(+ (lfor bdy cfgs :if (:body (get coco-storage (name bdy)) :default None)
                 (:body (get coco-storage (name bdy)) :default None))
-           (if (in :body g!forms) [(get g!forms :body)] []))))
+           (list body))))
+
+(defmacro coco-expand [cfgs &rest bdy]
+  `(do
+     (import [hy.contrib.hy-repr [hy-repr]])
+     (require [coco.coco [coco]])
+     (print (.join "" (list (drop 1 (hy-repr ; drop the quote
+                                    (macroexpand '(coco ~cfgs ~@bdy)))))))
+     )
+       )
